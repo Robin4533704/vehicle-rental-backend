@@ -1,38 +1,32 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = "KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30";
+const JWT_SECRET = process.env.JWT_SECRET!;
 
-// ✅ Extend Express Request
 export interface AuthRequest extends Request {
-  user?: {
-    id: number;
-    email: string;
-    role: string;
-  };
+  user?: { id: number; email: string; role: string };
 }
 
-// ✅ Auth Middleware (JWT verification)
 export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  if (!authHeader) return res.status(401).json({ message: "Unauthorized: No token" });
+
+  let token: string | undefined;
+  if (authHeader.startsWith("Bearer ")) token = authHeader.split(" ")[1];
+  else token = authHeader; // direct token support
 
   if (!token) return res.status(401).json({ message: "Unauthorized: No token" });
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any;
-    req.user = payload; // TypeScript now knows req.user exists
+    req.user = payload;
     next();
   } catch (err) {
     return res.status(403).json({ message: "Forbidden: Invalid token" });
   }
 };
 
-// ✅ Admin Only Middleware
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ message: "Forbidden: Admins only" });
-  }
+  if (req.user?.role !== "admin") return res.status(403).json({ message: "Forbidden: Admins only" });
   next();
 };
-

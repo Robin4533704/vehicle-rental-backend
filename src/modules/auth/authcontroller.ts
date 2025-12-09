@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "./auth.service";
 
-const JWT_SECRET = "KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"; 
+const JWT_SECRET = process.env.JWT_SECRET!; 
 
 // ✅ Signup
 export const signup = async (req: Request, res: Response) => {

@@ -10,6 +10,10 @@ import {
 // ✅ CREATE VEHICLE (Admin Only)
 export const createVehicle = async (req: Request, res: Response) => {
   try {
+    console.log("===== CREATE VEHICLE REQUEST =====");
+    console.log("Headers:", req.headers);       // 
+    console.log("Body:", req.body);           
+
     const {
       vehicle_name,
       type,
@@ -18,7 +22,8 @@ export const createVehicle = async (req: Request, res: Response) => {
       availability_status,
     } = req.body;
 
-    if (!vehicle_name || !type || !registration_number || !daily_rent_price) {
+    if (!vehicle_name || !type || !registration_number || !daily_rent_price || !availability_status) {
+      console.log("Missing field detected!");  
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
@@ -30,30 +35,25 @@ export const createVehicle = async (req: Request, res: Response) => {
       availability_status,
     });
 
-    console.log("Vehicle created:", vehicle); // ডিবাগ লগ
-
+    console.log("Vehicle created successfully:", vehicle); 
     res.status(201).json({
       success: true,
       message: "Vehicle created successfully",
       data: vehicle,
     });
   } catch (error: any) {
-    if (error.code === "23505") {
-      return res.status(409).json({ success: false, message: "Registration number already exists" });
-    }
-
     console.error("Create Vehicle Error:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-// ✅ GET ALL VEHICLES (Public)
+
 export const getAllVehicles = async (_req: Request, res: Response) => {
   try {
     const vehicles = await getAllVehiclesService();
 
-    // ডিবাগ লগ
-    console.log("DB থেকে আসা vehicles:", vehicles);
+
+    console.log("DB vehicles:", vehicles);
 
     if (!vehicles || vehicles.length === 0) {
       return res.status(200).json({
@@ -81,7 +81,7 @@ export const getSingleVehicle = async (req: Request, res: Response) => {
 
     const vehicle = await getSingleVehicleService(Number(vehicleId));
 
-    console.log("Single vehicle fetched:", vehicle); // ডিবাগ লগ
+    console.log("Single vehicle fetched:", vehicle); 
 
     if (!vehicle) {
       return res.status(404).json({
