@@ -1,106 +1,46 @@
 import { Request, Response } from "express";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "./auth.service";
 
-// ✅ SIGNUP CONTROLLER
+const JWT_SECRET = "KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"; 
+
+// ✅ Signup
 export const signup = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone, role } = req.body;
 
-    // ✅ Basic Validation
     if (!name || !email || !password || !phone || !role) {
-      return res.status(400).json({
-        message: "All fields are required",
-      });
+      return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        message: "Password must be at least 6 characters long",
-      });
-    }
-
-    const emailLower = email.toLowerCase();
-
-    // ✅ Check if user already exists
-    const existingUser = await findUserByEmail(emailLower);
-    if (existingUser) {
-      return res.status(409).json({
-        message: "User already exists with this email",
-      });
-    }
-
-    // ✅ Hash Password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // ✅ Create User
-    await createUser({
-      name,
-      email: emailLower,
-      password: hashedPassword,
-      phone,
-      role,
-    });
-
-    return res.status(201).json({
-      message: "User registered successfully",
-    });
-  } catch (error) {
-    console.error("Signup Error:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    const user = await createUser({ name, email, password, phone, role });
+    res.status(201).json({ success: true, message: "User created", data: user });
+  } catch (error: any) {
+    console.error("Signup error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ✅ SIGNIN CONTROLLER
+// ✅ Login
 export const signin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // ✅ Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Email and password are required",
-      });
+    const user = await findUserByEmail(email);
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const emailLower = email.toLowerCase();
-
-    // ✅ Check User Exists
-    const user = await findUserByEmail(emailLower);
-    if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    // ✅ Compare Password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-      });
-    }
-
-    // ✅ Generate JWT Token
     const token = jwt.sign(
-      {
-        userId: user.id,
-        role: user.role,
-      },
-      process.env.JWT_SECRET as string,
-      { expiresIn: "7d" }
+      { id: user.id, role: user.role, email: user.email },
+      JWT_SECRET,
+      { expiresIn: "1h" }
     );
 
-    return res.status(200).json({
-      token,
-    });
-  } catch (error) {
-    console.error("Signin Error:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-    });
+    res.status(200).json({ success: true, token });
+  } catch (error: any) {
+    console.error("Signin error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

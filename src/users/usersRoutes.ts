@@ -3,19 +3,19 @@ import {
   getAllUsers,
   updateUser,
   deleteUser,
-} from "./userscontroller";
-import { authenticate } from "../middlewares/auth.middleware";
-import { authorize } from "../middlewares/role.middleware";
+} from "../users/userscontroller";
+import { authMiddleware, adminOnly } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// ✅ Admin Only - View all users
-router.get("/", authenticate, authorize(["admin"]), getAllUsers);
+// ✅ Get all users (Admin only)
+router.get("/", authMiddleware, adminOnly, getAllUsers);
 
-// ✅ Admin OR Own Profile - Update user
-router.put("/:userId", authenticate, updateUser);
+// ✅ Update user (Admin or Own profile)
+router.put("/:userId", authMiddleware, updateUser);
 
-// ✅ Admin Only - Delete user (if no active bookings)
-router.delete("/:userId", authenticate, authorize(["admin"]), deleteUser);
+// ✅ Delete user (Admin only + No active bookings)
+router.delete("/:userId", authMiddleware, adminOnly, deleteUser);
 
 export default router;
+

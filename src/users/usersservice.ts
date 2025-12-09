@@ -46,19 +46,19 @@ export const updateUserService = async (id: number, data: any) => {
 };
 
 // ✅ DELETE USER (Only if NO active bookings)
-export const deleteUserService = async (userId: number) => {
+export const deleteUserService = async (id: number) => {
   const bookingCheck = await pool.query(
     `
     SELECT * FROM bookings
     WHERE customer_id = $1 AND status = 'active'
   `,
-    [userId]
+    [id]
   );
 
   if (bookingCheck.rowCount > 0) {
     return false;
   }
 
-  await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+  await pool.query("DELETE FROM users WHERE id = $1", [id]);
   return true;
 };

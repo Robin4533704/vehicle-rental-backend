@@ -40,14 +40,14 @@ export const createBookingService = async (data: CreateBookingPayload) => {
 };
 
 // ✅ GET BOOKINGS (Role-based)
-export const getBookingsService = async (role: string, userId: number) => {
+export const getBookingsService = async (role: string, id: number) => {
   if (role === "admin") {
     const result = await pool.query("SELECT * FROM bookings ORDER BY id DESC");
     return result.rows;
   } else {
     const result = await pool.query(
       "SELECT * FROM bookings WHERE customer_id = $1 ORDER BY id DESC",
-      [userId]
+      [id]
     );
     return result.rows;
   }

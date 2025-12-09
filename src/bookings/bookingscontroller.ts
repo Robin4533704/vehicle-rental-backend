@@ -12,7 +12,7 @@ import { getSingleVehicleService, updateVehicleService } from "../vehicles/vehic
 export const createBooking = async (req: AuthRequest, res: Response) => {
   try {
     const { vehicle_id, rent_start_date, rent_end_date } = req.body;
-    const customer_id = req.user.userId;
+    const customer_id = req.user.id;
 
     if (!vehicle_id || !rent_start_date || !rent_end_date) {
       return res.status(400).json({ message: "All fields are required" });
@@ -63,9 +63,9 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
 export const getBookings = async (req: AuthRequest, res: Response) => {
   try {
     const role = req.user.role;
-    const userId = req.user.userId;
+    const id = req.user.id;
 
-    const bookings = await getBookingsService(role, userId);
+    const bookings = await getBookingsService(role, id);
     res.status(200).json(bookings);
   } catch (error) {
     console.error("Get Bookings Error:", error);
@@ -78,7 +78,7 @@ export const updateBooking = async (req: AuthRequest, res: Response) => {
   try {
     const { bookingId } = req.params;
     const role = req.user.role;
-    const userId = req.user.userId;
+    const id = req.user.id;
 
     const booking = await getBookingByIdService(Number(bookingId));
     if (!booking) {
@@ -90,7 +90,7 @@ export const updateBooking = async (req: AuthRequest, res: Response) => {
 
     // ✅ Customer: Cancel before start date
     if (role === "customer") {
-      if (booking.customer_id !== userId) {
+      if (booking.customer_id !== id) {
         return res.status(403).json({ message: "Forbidden" });
       }
       if (now >= startDate) {

@@ -1,22 +1,38 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
+const JWT_SECRET = "KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30";
+
+// ✅ Extend Express Request
 export interface AuthRequest extends Request {
-  user?: any;
+  user?: {
+    id: number;
+    email: string;
+    role: string;
+  };
 }
 
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "Unauthorized: No token" });
+// ✅ Auth Middleware (JWT verification)
+export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
-  const token = authHeader.split(" ")[1]; // "Bearer <token>"
   if (!token) return res.status(401).json({ message: "Unauthorized: No token" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    req.user = decoded; // attach user to request
+    const payload = jwt.verify(token, JWT_SECRET) as any;
+    req.user = payload; // TypeScript now knows req.user exists
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Unauthorized: Invalid token" });
+    return res.status(403).json({ message: "Forbidden: Invalid token" });
   }
 };
+
+// ✅ Admin Only Middleware
+export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden: Admins only" });
+  }
+  next();
+};
+
