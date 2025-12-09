@@ -18,32 +18,19 @@ export const getUserByIdService = async (id: number) => {
   return result.rows[0];
 };
 
-// ✅ UPDATE USER (Admin or Own Profile)
 export const updateUserService = async (id: number, data: any) => {
-  const fields = [];
-  const values = [];
-  let index = 1;
+  const keys = Object.keys(data);
+  if (!keys.length) return null;
 
-  for (const key in data) {
-    fields.push(`${key} = $${index}`);
-    values.push(data[key]);
-    index++;
-  }
+  const setString = keys.map((k, i) => `"${k}"=$${i + 1}`).join(", ");
+  const values = Object.values(data);
 
-  if (fields.length === 0) return null;
+  const query = `UPDATE users SET ${setString} WHERE id=$${values.length + 1} RETURNING *`;
+  const result = await pool.query(query, [...values, id]);
 
-  const query = `
-    UPDATE users
-    SET ${fields.join(", ")}
-    WHERE id = $${index}
-    RETURNING id, name, email, phone, role
-  `;
-
-  values.push(id);
-
-  const result = await pool.query(query, values);
   return result.rows[0];
 };
+
 
 // ✅ DELETE USER (Only if NO active bookings)
 export const deleteUserService = async (id: number) => {

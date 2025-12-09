@@ -17,37 +17,48 @@ export const getAllUsers = async (_req: AuthRequest, res: Response) => {
   }
 };
 
-// ✅ UPDATE USER (Admin or Own Profile)
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
-    const loggedUser = req.user; // from JWT
+    const { userId } = req.params;
+    const loggedUser = req.user;
 
-    // ✅ Fetch target user
-    const targetUser = await getUserByIdService(Number(id));
-    if (!targetUser) {
-      return res.status(404).json({ message: "User not found" });
+    const parsedId = Number(userId);
+    if (isNaN(parsedId)) return res.status(400).json({ message: "Invalid user ID" });
+
+    const targetUser = await getUserByIdService(parsedId);
+    if (!targetUser) return res.status(404).json({ message: "User not found" });
+
+    if (loggedUser.role === "customer" && loggedUser.id !== parsedId)
+      return res.status(403).json({ message: "Forbidden access" });
+
+    // ✅ Allowed fields for update
+    const allowedFields = ["name", "email", "phone", "role"];
+    const updateData: any = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) updateData[key] = req.body[key];
     }
 
-if (loggedUser.role === "customer" && loggedUser.id !== Number(id)) {
-  return res.status(403).json({ message: "Forbidden access" });
-}
+    if (Object.keys(updateData).length === 0)
+      return res.status(400).json({ message: "No valid fields provided for update" });
 
-    const updatedUser = await updateUserService(Number(id), req.body);
+    const updatedUser = await updateUserService(parsedId, updateData);
 
-    res.status(200).json(updatedUser);
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
   } catch (error) {
     console.error("Update User Error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// ✅ DELETE USER (Admin Only + No Active Bookings)
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const {  userId  } = req.params;
 
-    const deleted = await deleteUserService(Number(id));
+    const deleted = await deleteUserService(Number( userId ));
     if (!deleted) {
       return res
         .status(400)

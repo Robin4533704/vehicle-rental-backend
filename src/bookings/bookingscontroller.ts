@@ -7,6 +7,7 @@ import {
   getBookingByIdService,
 } from "./bookingsservice";
 import { getSingleVehicleService, updateVehicleService } from "../vehicles/vehiclesservice";
+import pool from "../config/db";
 
 // ✅ CREATE BOOKING
 export const createBooking = async (req: AuthRequest, res: Response) => {
@@ -19,8 +20,12 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     }
 
     const vehicle = await getSingleVehicleService(vehicle_id);
+    console.log("Vehicle fetched:", vehicle);
     if (!vehicle) {
-      return res.status(404).json({ message: "Vehicle not found" });
+      console.log("Querying vehicle with ID:", vehicle_id);
+     const result = await pool.query("SELECT * FROM vehicles WHERE id = $1", [vehicle_id]);
+console.log("Query result:", result.rows);
+return result.rows[0];
     }
 
     if (vehicle.availability_status === "booked") {

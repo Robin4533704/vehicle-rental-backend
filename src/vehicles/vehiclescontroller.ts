@@ -7,13 +7,9 @@ import {
   deleteVehicleService,
 } from "./vehiclesservice";
 
-// ✅ CREATE VEHICLE (Admin Only)
+// CREATE VEHICLE (Admin)
 export const createVehicle = async (req: Request, res: Response) => {
   try {
-    console.log("===== CREATE VEHICLE REQUEST =====");
-    console.log("Headers:", req.headers);       // 
-    console.log("Body:", req.body);           
-
     const {
       vehicle_name,
       type,
@@ -23,7 +19,6 @@ export const createVehicle = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!vehicle_name || !type || !registration_number || !daily_rent_price || !availability_status) {
-      console.log("Missing field detected!");  
       return res.status(400).json({ success: false, message: "All fields are required" });
     }
 
@@ -35,33 +30,21 @@ export const createVehicle = async (req: Request, res: Response) => {
       availability_status,
     });
 
-    console.log("Vehicle created successfully:", vehicle); 
     res.status(201).json({
       success: true,
       message: "Vehicle created successfully",
       data: vehicle,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Create Vehicle Error:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-
+// ✅ GET ALL VEHICLES
 export const getAllVehicles = async (_req: Request, res: Response) => {
   try {
     const vehicles = await getAllVehiclesService();
-
-
-    console.log("DB vehicles:", vehicles);
-
-    if (!vehicles || vehicles.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No vehicles found",
-        data: [],
-      });
-    }
 
     res.status(200).json({
       success: true,
@@ -74,14 +57,50 @@ export const getAllVehicles = async (_req: Request, res: Response) => {
   }
 };
 
-// ✅ GET SINGLE VEHICLE (Public)
+// ✅ GET SINGLE VEHICLE
+// export const getSingleVehicle = async (req: Request, res: Response) => {
+//   try {
+//        console.log("Params:", req.params);
+//     console.log("Headers:", req.headers);
+//     const { vehicleId } = req.params;
+
+//     const parsedId = Number(vehicleId);
+//     if (isNaN(parsedId)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid vehicle ID",
+//       });
+//     }
+
+//     const vehicle = await getSingleVehicleService(parsedId);
+
+//     if (!vehicle) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Vehicle not found",
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Vehicle retrieved successfully",
+//       data: vehicle,
+//     });
+//   } catch (error) {
+//     console.error("Get Single Vehicle Error:", error);
+//     res.status(500).json({ success: false, message: "Internal server error" });
+//   }
+// };
+
 export const getSingleVehicle = async (req: Request, res: Response) => {
   try {
-    const { vehicleId } = req.params;
+    console.log("Params:", req.params);
+    console.log("Headers:", req.headers);
 
+    const { vehicleId } = req.params;
     const vehicle = await getSingleVehicleService(Number(vehicleId));
 
-    console.log("Single vehicle fetched:", vehicle); 
+    console.log("Single vehicle fetched:", vehicle);
 
     if (!vehicle) {
       return res.status(404).json({
@@ -101,13 +120,22 @@ export const getSingleVehicle = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ UPDATE VEHICLE (Admin Only)
+
 export const updateVehicle = async (req: Request, res: Response) => {
   try {
     const { vehicleId } = req.params;
-    const updatedVehicle = await updateVehicleService(Number(vehicleId), req.body);
 
-    console.log("Vehicle updated:", updatedVehicle); // ডিবাগ লগ
+   const allowedFields = ["vehicle_name", "type", "registration_number", "daily_rent_price", "availability_status"];
+const updateData: any = {};
+for (const key of allowedFields) {
+  if (req.body[key] !== undefined) {
+    updateData[key] = req.body[key];
+  }
+}
+console.log("Update Data Prepared:", updateData);
+    const updatedVehicle = await updateVehicleService(Number(vehicleId), updateData);
+
+    console.log("Vehicle updated:", updatedVehicle);
 
     if (!updatedVehicle) {
       return res.status(404).json({ success: false, message: "Vehicle not found" });
@@ -124,14 +152,13 @@ export const updateVehicle = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ DELETE VEHICLE (Admin Only + No Active Booking)
+
+// DELETE VEHICLE
 export const deleteVehicle = async (req: Request, res: Response) => {
   try {
     const { vehicleId } = req.params;
 
     const deleted = await deleteVehicleService(Number(vehicleId));
-
-    console.log("Delete result:", deleted); // ডিবাগ লগ
 
     if (!deleted) {
       return res.status(400).json({
